@@ -19,6 +19,7 @@ export async function sendEmailWithAttachment(
     subject: string;
     body: string;
     attachmentPublicPath?: string; // e.g. "/marketing/flyers/open-house-tropical-blue.jpg"
+    attachmentBuffer?: Buffer; // for client-generated exports (PNG/PDF)
     attachmentFilename?: string;
     attachmentMimeType?: string;
   },
@@ -40,10 +41,17 @@ export async function sendEmailWithAttachment(
     "",
   ];
 
-  if (opts.attachmentPublicPath) {
-    const filePath = path.join(process.cwd(), "public", opts.attachmentPublicPath);
-    const fileBuffer = fs.readFileSync(filePath);
-    const filename = opts.attachmentFilename ?? path.basename(filePath);
+  const resolvedBuffer =
+    opts.attachmentBuffer ??
+    (opts.attachmentPublicPath
+      ? fs.readFileSync(path.join(process.cwd(), "public", opts.attachmentPublicPath))
+      : undefined);
+
+  if (resolvedBuffer) {
+    const fileBuffer = resolvedBuffer;
+    const filename =
+      opts.attachmentFilename ??
+      (opts.attachmentPublicPath ? path.basename(opts.attachmentPublicPath) : "attachment");
     const mimeType = opts.attachmentMimeType ?? "application/octet-stream";
 
     lines.push(
