@@ -25,6 +25,8 @@ model User {
   rateEntries   RateEntry[]
   marketEntries MarketEntry[]
   listings      Listing[]
+  marketingDocs MarketingDoc[]
+  hiddenTemplates HiddenTemplate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -116,4 +118,43 @@ model Listing {
   marketEntry MarketEntry? @relation(fields: [marketEntryId], references: [id], onDelete: SetNull)
 
   @@index([userId, status])
+}
+
+// ---- Marketing Production ----
+
+// A saved marketing piece: either duplicated from a premade template
+// ("Save to premade" / "Generate new") or built from blank. Premade
+// templates themselves are defined in code (lib/marketing/*), not rows —
+// this table only holds what a user has actually created or customized.
+model MarketingDoc {
+  id            String   @id @default(cuid())
+  userId        String
+  kind          String // "flyer" | "presentation" | "cma"
+  name          String
+  templateKey   String? // which premade template this was generated from, if any
+  paletteIndex  Int?
+  customBg      String?
+  customFg      String?
+  customAccent  String?
+  useCustom     Boolean  @default(false)
+  pages         Json // MarketingPage[] (see lib/marketing/types.ts)
+  savedToLibrary Boolean @default(false) // appears in the library grid, not just "my docs"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, kind])
+}
+
+// Lets a user "delete" a premade (code-defined) template card from their
+// own library view without affecting other users or the underlying asset.
+model HiddenTemplate {
+  id          String @id @default(cuid())
+  userId      String
+  templateKey String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, templateKey])
 }
