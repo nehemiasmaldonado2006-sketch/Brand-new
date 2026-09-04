@@ -9,15 +9,29 @@ Built with Next.js (App Router, TypeScript, Tailwind CSS v4), NextAuth.js
 
 ## Status
 
-- **Live:** Dashboard shell, Email Desk (Gmail), Calendar & Time (Google
-  Calendar), Rate Desk (manual entry + payment calculator), Market Desk +
-  Area Explorer (manual entry, listings, active/closed tabs).
-- **Placeholder, building next:** Content Studio (no data source chosen
-  yet), Marketing Production (flyer/presentation/CMA library + Canva-style
-  editor).
-- **Mock buttons carried over from the design, not wired yet:** Download
-  PDF, Share link with client, Send to Marketing Production, Send buyer a
-  rate sheet.
+Every panel in the original design is now real, not a mockup:
+
+- **Email Desk** — live via Gmail (unread, drafts, a "needs my voice"
+  flagged-thread heuristic).
+- **Calendar & Time** — live via Google Calendar (today's timeline,
+  overlap/conflict detection).
+- **Rate Desk** — manual rate logging + history chart + payment
+  calculator, with an "Export history to Sheets" button.
+- **Market Desk + Area Explorer** — manual market stats + listings
+  (active / closed-last-6-months), with an "Export to Sheets" button.
+- **Content Studio** — log content ideas (Reel/Carousel/Caption); click
+  one to read its full script, update status, or delete it.
+- **Marketing Production** — a real Flyer Library (the team's 13 actual
+  flyer designs) with live "Send to client" via Gmail; 15 Presentation +
+  15 CMA premade templates (6 layouts × 30 palettes); a Canva-style
+  Studio editor (drag/resize/select/delete text, shape, photo and logo
+  elements, palette + custom colors, page management) with client-side
+  PNG/PDF export, Gmail send, and an optional one-click export to a real
+  Google Slides deck (presentations) or Google Doc (CMA).
+
+**Mock buttons still carried over from the design, not wired to
+anything real:** Download PDF / Share link on the Market Desk area
+report, "Send buyer a rate sheet" on Rate Desk. Everything else is live.
 
 ## Local setup
 
@@ -54,11 +68,17 @@ To enable that you need a Google Cloud OAuth client:
    `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (in `.env` locally, and in
    Vercel's Environment Variables for production).
 
-The app requests `gmail.readonly`, `gmail.modify` (so approved drafts can
-eventually be sent from Email Desk) and `calendar.readonly` scopes. While
-the OAuth consent screen is in "Testing" mode, only accounts you add as
-test users can sign in — publish the app (or keep it in testing, since
-this is a single-user tool) once you're happy with it.
+The app requests `gmail.readonly`, `gmail.modify` (so it can send email
+on your behalf for "Send to client" and, eventually, approved drafts),
+`calendar.readonly`, `drive.file` (so it can only see files it creates
+itself, not your whole Drive), `spreadsheets`, `presentations` and
+`documents` (for the optional "Export to Sheets/Slides/Docs" buttons).
+While the OAuth consent screen is in "Testing" mode, only accounts you
+add as test users can sign in — publish the app (or keep it in testing,
+since this is a single-user tool) once you're happy with it.
+
+If you already signed in before these scopes were added, sign out and
+back in once — the consent screen will show the new permissions.
 
 ## Deploying to Vercel
 
