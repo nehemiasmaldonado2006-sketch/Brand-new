@@ -27,6 +27,7 @@ model User {
   listings      Listing[]
   marketingDocs MarketingDoc[]
   hiddenTemplates HiddenTemplate[]
+  contentIdeas  ContentIdea[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,4 +158,23 @@ model HiddenTemplate {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, templateKey])
+}
+
+// ---- Content Studio ----
+
+// A content idea (Reel / Carousel / Caption) with its script — click a
+// card in Content Studio to read the full script, not just the idea.
+model ContentIdea {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String // "Reel" | "Carousel" | "Caption"
+  title     String
+  script    String
+  status    String   @default("Idea") // "Idea" | "Drafted" | "Scheduled" | "Posted"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }

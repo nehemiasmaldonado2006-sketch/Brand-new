@@ -8,6 +8,7 @@ import { getEmailSummary } from "@/lib/data/email";
 import { getTodaySummary } from "@/lib/data/calendar";
 import { getLatestRate } from "@/lib/data/rate";
 import { getLatestMarketEntry } from "@/lib/data/market";
+import { getContentIdeas } from "@/lib/data/content";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +16,15 @@ export default async function Dashboard() {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const [email, calendar, rate, market] = userId
+  const [email, calendar, rate, market, content] = userId
     ? await Promise.all([
         getEmailSummary(userId),
         getTodaySummary(userId),
         getLatestRate(userId),
         getLatestMarketEntry(userId),
+        getContentIdeas(userId),
       ])
-    : [null, null, null, null];
+    : [null, null, null, null, []];
 
   const connected = Boolean(userId);
 
@@ -75,21 +77,40 @@ export default async function Dashboard() {
           icon={<ContentIcon />}
           title="Content Studio"
           kicker="This week"
-          badge="No batch"
-          footer="No content source"
+          badge={content.length ? `${content.length} ideas` : "No batch"}
+          footer={content.length ? "Manually logged" : "No content source"}
         >
-          <Row label="Reels" value="—" />
-          <Row label="Carousels" value="—" />
-          <Row label="Captions" value="—" soft={false} />
+          <Row label="Reels" value={content.filter((c) => c.type === "Reel").length || "—"} />
+          <Row label="Carousels" value={content.filter((c) => c.type === "Carousel").length || "—"} />
+          <Row
+            label="Captions"
+            value={content.filter((c) => c.type === "Caption").length || "—"}
+            soft={false}
+          />
           <div className="flex flex-1 flex-col gap-2 pt-4">
             <div className="flex items-center justify-between">
               <span className="text-[10px] tracking-[0.16em] text-muted uppercase">
                 Batch completion
               </span>
-              <span className="text-[11px] text-muted">—</span>
+              <span className="text-[11px] text-muted">
+                {content.length
+                  ? `${Math.round((content.filter((c) => c.status === "Posted").length / content.length) * 100)}%`
+                  : "—"}
+              </span>
             </div>
-            <div className="h-1 bg-black/[0.09]" />
-            <div className="mt-1 text-[12px] text-muted">No batch scheduled</div>
+            <div className="h-1 bg-black/[0.09]">
+              {content.length > 0 && (
+                <div
+                  className="h-1 bg-accent"
+                  style={{
+                    width: `${Math.round((content.filter((c) => c.status === "Posted").length / content.length) * 100)}%`,
+                  }}
+                />
+              )}
+            </div>
+            <div className="mt-1 text-[12px] text-muted">
+              {content.length ? `${content.length} ideas logged` : "No batch scheduled"}
+            </div>
           </div>
           <DarkButton href="/content" className="mt-4">
             Open Content Studio
