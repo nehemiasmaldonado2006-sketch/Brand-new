@@ -35,14 +35,17 @@ report, "Send buyer a rate sheet" on Rate Desk. Everything else is live.
 
 ## Local setup
 
+Needs a Postgres database — either a local one, or just point at the
+same production database from Vercel while you iterate.
+
 1. `npm install`
 2. Copy `.env.example` to `.env` and fill in:
-   - `DATABASE_URL` — leave as the default SQLite file for local dev.
+   - `DATABASE_URL` — a Postgres connection string.
    - `AUTH_SECRET` — generate with `npx auth secret` or
      `openssl rand -base64 33`.
    - `AUTH_URL` — `http://localhost:3000` for local dev.
    - `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` — see below.
-3. `npx prisma migrate dev` — creates the local SQLite database.
+3. `npx prisma migrate deploy` — applies the schema to that database.
 4. `npm run dev` — starts the app at http://localhost:3000.
 
 ## Google Cloud OAuth setup (required for Email Desk & Calendar)
@@ -84,21 +87,18 @@ back in once — the consent screen will show the new permissions.
 
 1. Push this repo to GitHub (already done if you're reading this there).
 2. Import the repo in Vercel.
-3. Add a Postgres database (Vercel Postgres or Neon both work) and set
-   `DATABASE_URL` to its connection string in Vercel's Environment
-   Variables.
-4. In `prisma/schema.prisma`, change the datasource `provider` from
-   `sqlite` to `postgresql`, commit, and push — the schema itself doesn't
-   need to change.
-5. Add `AUTH_SECRET`, `AUTH_URL` (your production URL), and the Google
+3. Add a Postgres database (Vercel Postgres or Neon both work) — Vercel
+   sets `DATABASE_URL` for you automatically when you add it this way.
+4. Add `AUTH_SECRET`, `AUTH_URL` (your production URL, e.g.
+   `https://your-app.vercel.app`, no trailing slash), and the Google
    `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` from the OAuth setup above
    as Environment Variables.
-6. Add the production redirect URI to the Google OAuth client (step 4
-   above).
-7. Deploy. Vercel runs `prisma generate` automatically via the `postinstall`
-   script; run `npx prisma migrate deploy` once (via `vercel env pull` +
-   local run, or a one-off Vercel deployment hook) to apply migrations to
-   the production database.
+5. Add the production redirect URI to the Google OAuth client (step 4 in
+   the OAuth section above).
+6. Deploy (or redeploy). The build script (`prisma generate && prisma
+   migrate deploy && next build`) applies any pending database migrations
+   automatically on every deploy — there's no separate manual migration
+   step to run.
 
 ## Data model
 

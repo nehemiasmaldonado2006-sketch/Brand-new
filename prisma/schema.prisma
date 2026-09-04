@@ -1,14 +1,14 @@
 // Prisma schema for Mission Control.
-// Local dev uses SQLite (see .env DATABASE_URL). For Vercel, swap the
-// datasource provider to "postgresql" and point DATABASE_URL at a
-// Vercel Postgres / Neon instance — the models below don't need to change.
+// Postgres everywhere (matches production — Vercel Postgres/Neon). Point
+// DATABASE_URL at your own local Postgres for dev, or at the same
+// production database while iterating (see README).
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
