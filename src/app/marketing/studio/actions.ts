@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { MarketingPage } from "@/lib/marketing/types";
+import { exportDocToSlides, exportDocToDocs } from "@/lib/marketing/slides-export";
 
 async function requireOwnedDoc(docId: string) {
   const session = await auth();
@@ -48,6 +49,16 @@ export async function saveDocToLibrary(docId: string) {
   await prisma.marketingDoc.update({ where: { id: docId }, data: { savedToLibrary: true } });
   revalidatePath(`/marketing/studio/${docId}`);
   return { ok: true };
+}
+
+export async function exportDocToGoogle(
+  docId: string,
+  kind: "presentation" | "cma",
+  name: string,
+  pages: MarketingPage[],
+) {
+  const { userId } = await requireOwnedDoc(docId);
+  return kind === "cma" ? exportDocToDocs(userId, name, pages) : exportDocToSlides(userId, name, pages);
 }
 
 export async function deleteDocAction(formData: FormData) {

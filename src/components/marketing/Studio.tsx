@@ -7,7 +7,7 @@ import type { CanvasElement, MarketingPage } from "@/lib/marketing/types";
 import { PALETTES, PAGE_W, PAGE_H } from "@/lib/marketing/types";
 import { seedPage, newElementId } from "@/lib/marketing/seed";
 import { exportNodeAsPngBlob, capturePage, buildPdfFromCaptures, downloadBlob, type CapturedPage } from "@/lib/marketing/export";
-import { saveDoc, saveDocToLibrary, deleteDocAction } from "@/app/marketing/studio/actions";
+import { saveDoc, saveDocToLibrary, deleteDocAction, exportDocToGoogle } from "@/app/marketing/studio/actions";
 
 type DocKind = "presentation" | "cma";
 
@@ -66,6 +66,9 @@ export function Studio({ doc, libraryHref }: { doc: StudioDoc; libraryHref: stri
   const [sendError, setSendError] = useState("");
   const [exporting, setExporting] = useState<"png" | "pdf" | null>(null);
   const [captureIdx, setCaptureIdx] = useState<number | null>(null);
+  const [googleExport, setGoogleExport] = useState<
+    { status: "idle" } | { status: "working" } | { status: "done"; url: string } | { status: "error"; error: string }
+  >({ status: "idle" });
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const captureRef = useRef<HTMLDivElement>(null);
@@ -191,6 +194,16 @@ export function Studio({ doc, libraryHref }: { doc: StudioDoc; libraryHref: stri
     return new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
   }
 
+  async function handleGoogleExport() {
+    setGoogleExport({ status: "working" });
+    const result = await exportDocToGoogle(doc.id, doc.kind, name, pages);
+    if (result.ok) {
+      setGoogleExport({ status: "done", url: result.url });
+    } else {
+      setGoogleExport({ status: "error", error: result.error });
+    }
+  }
+
   async function handleDownloadPng() {
     if (!canvasRef.current) return;
     setExporting("png");
@@ -281,6 +294,15 @@ export function Studio({ doc, libraryHref }: { doc: StudioDoc; libraryHref: stri
             <button type="button" onClick={handleDownloadPdf} disabled={!!exporting} className={ghostBtn}>
               {exporting === "pdf" ? "…" : "PDF"}
             </button>
+            <button
+              type="button"
+              onClick={handleGoogleExport}
+              disabled={googleExport.status === "working"}
+              title={doc.kind === "cma" ? "Export to Google Docs" : "Export to Google Slides"}
+              className={ghostBtn}
+            >
+              {googleExport.status === "working" ? "…" : doc.kind === "cma" ? "Docs" : "Slides"}
+            </button>
           </div>
           <button
             type="button"
@@ -298,6 +320,34 @@ export function Studio({ doc, libraryHref }: { doc: StudioDoc; libraryHref: stri
           </button>
         </div>
       </div>
+
+      {googleExport.status === "done" && (
+        <div className="flex flex-none items-center gap-3 border-b border-black/10 bg-accent/[0.1] px-4 py-2 text-[12px] text-ink">
+          <span>Exported to {doc.kind === "cma" ? "Google Docs" : "Google Slides"} —</span>
+          <a href={googleExport.url} target="_blank" rel="noreferrer" className="text-accent underline">
+            open it
+          </a>
+          <button
+            type="button"
+            onClick={() => setGoogleExport({ status: "idle" })}
+            className="ml-auto cursor-pointer border-none bg-transparent text-[13px] text-muted"
+          >
+            ×
+          </button>
+        </div>
+      )}
+      {googleExport.status === "error" && (
+        <div className="flex flex-none items-center gap-3 border-b border-black/10 bg-black/[0.03] px-4 py-2 text-[12px] text-muted">
+          <span>Couldn&apos;t export: {googleExport.error}</span>
+          <button
+            type="button"
+            onClick={() => setGoogleExport({ status: "idle" })}
+            className="ml-auto cursor-pointer border-none bg-transparent text-[13px] text-muted"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div className="relative flex min-h-0 flex-1">
         {/* tool rail */}
