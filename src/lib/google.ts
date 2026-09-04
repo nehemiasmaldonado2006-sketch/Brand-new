@@ -58,3 +58,27 @@ export async function calendarClientFor(userId: string) {
   if (!auth) return null;
   return google.calendar({ version: "v3", auth });
 }
+
+export async function sheetsClientFor(userId: string) {
+  const auth = await googleClientFor(userId);
+  if (!auth) return null;
+  return google.sheets({ version: "v4", auth });
+}
+
+export async function slidesClientFor(userId: string) {
+  const auth = await googleClientFor(userId);
+  if (!auth) return null;
+  return google.slides({ version: "v1", auth });
+}
+
+export async function docsClientFor(userId: string) {
+  const auth = await googleClientFor(userId);
+  if (!auth) return null;
+  return google.docs({ version: "v1", auth });
+}
+
+export async function driveClientFor(userId: string) {
+  const auth = await googleClientFor(userId);
+  if (!auth) return null;
+  return google.drive({ version: "v3", auth });
+}

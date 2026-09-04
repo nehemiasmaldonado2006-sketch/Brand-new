@@ -4,13 +4,18 @@ import { SignInButton, SignOutButton } from "@/components/AuthButtons";
 import { PaymentCalculator } from "@/components/panels/PaymentCalculator";
 import { getLatestRate, getRateHistory } from "@/lib/data/rate";
 import { sparklinePoints } from "@/lib/chart";
-import { logRate } from "./actions";
+import { logRate, exportRateHistory } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function RateDeskPage() {
+export default async function RateDeskPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sheet?: string; sheetError?: string }>;
+}) {
   const session = await auth();
   const userId = session?.user?.id;
+  const params = await searchParams;
 
   const [latest, history] = userId
     ? await Promise.all([getLatestRate(userId), getRateHistory(userId)])
@@ -29,6 +34,19 @@ export default async function RateDeskPage() {
         authSlot={userId ? <SignOutButton /> : <SignInButton />}
       />
       <main className="grid grid-cols-[1fr_340px] items-start gap-6 px-11 pt-7 pb-[60px]">
+        {params.sheet && (
+          <div className="col-span-2 border border-accent bg-accent/[0.07] px-[18px] py-3.5 text-[12.5px] text-ink">
+            Exported to Google Sheets —{" "}
+            <a href={params.sheet} target="_blank" rel="noreferrer" className="text-accent underline">
+              open the sheet
+            </a>
+          </div>
+        )}
+        {params.sheetError && (
+          <div className="col-span-2 border border-black/25 bg-black/[0.03] px-[18px] py-3.5 text-[12.5px] text-muted">
+            Couldn&apos;t export: {params.sheetError}
+          </div>
+        )}
         <div className="border border-black/[0.12] bg-panel p-[26px]">
           <div className="mb-[26px] flex gap-[52px]">
             <div>
@@ -67,15 +85,27 @@ export default async function RateDeskPage() {
               <polyline points={points15} fill="none" stroke="#b98f4e" strokeWidth="1.5" />
             )}
           </svg>
-          <div className="mt-3.5 flex gap-[22px] text-[11.5px] text-muted">
-            <span className="flex items-center gap-2">
-              <span className="h-0.5 w-3.5 bg-ink" />
-              30-year
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="h-0.5 w-3.5 bg-accent" />
-              15-year
-            </span>
+          <div className="mt-3.5 flex items-center justify-between gap-[22px]">
+            <div className="flex gap-[22px] text-[11.5px] text-muted">
+              <span className="flex items-center gap-2">
+                <span className="h-0.5 w-3.5 bg-ink" />
+                30-year
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="h-0.5 w-3.5 bg-accent" />
+                15-year
+              </span>
+            </div>
+            {userId && history.length > 0 && (
+              <form action={exportRateHistory}>
+                <button
+                  type="submit"
+                  className="cursor-pointer border border-black/25 bg-transparent px-3 py-2 font-sans text-[10px] tracking-[0.14em] text-muted uppercase hover:border-accent hover:text-accent"
+                >
+                  Export history to Sheets
+                </button>
+              </form>
+            )}
           </div>
 
           {userId && (

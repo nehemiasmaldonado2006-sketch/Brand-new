@@ -3,6 +3,9 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { exportToSheet } from "@/lib/sheets-export";
+import { getRateHistory } from "@/lib/data/rate";
 
 export async function logRate(formData: FormData) {
   const session = await auth();
@@ -23,4 +26,34 @@ export async function logRate(formData: FormData) {
 
   revalidatePath("/rate");
   revalidatePath("/");
+}
+
+export async function exportRateHistory() {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Not signed in");
+
+  const history = await getRateHistory(session.user.id, 500);
+  const rows: (string | number)[][] = [
+    ["Date", "30-year rate %", "15-year rate %", "FHA 30 %"],
+    ...history
+      .slice()
+      .reverse()
+      .map((h) => [
+        h.loggedAt.toISOString().slice(0, 10),
+        h.rate30,
+        h.rate15,
+        h.fha30 ?? "",
+      ]),
+  ];
+
+  const result = await exportToSheet(
+    session.user.id,
+    `Mission Control — Rate History — ${new Date().toLocaleDateString("en-US")}`,
+    rows,
+  );
+
+  if ("error" in result) {
+    redirect(`/rate?sheetError=${encodeURIComponent(result.error)}`);
+  }
+  redirect(`/rate?sheet=${encodeURIComponent(result.url)}`);
 }

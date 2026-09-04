@@ -4,7 +4,7 @@ import { Header } from "@/components/Header";
 import { SignInButton, SignOutButton } from "@/components/AuthButtons";
 import { EmptyNote, GoldButton, OutlineButton } from "@/components/ui";
 import { getMarketEntryByArea, getListings } from "@/lib/data/market";
-import { runAreaReport, logMarketStats, addListing } from "./actions";
+import { runAreaReport, logMarketStats, addListing, exportMarketData } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +19,7 @@ const STAT_FIELDS: { key: "medianList" | "medianClosed" | "daysOnMarket" | "pric
 export default async function MarketDeskPage({
   searchParams,
 }: {
-  searchParams: Promise<{ area?: string; tab?: string }>;
+  searchParams: Promise<{ area?: string; tab?: string; sheet?: string; sheetError?: string }>;
 }) {
   const session = await auth();
   const userId = session?.user?.id;
@@ -39,6 +39,19 @@ export default async function MarketDeskPage({
         authSlot={userId ? <SignOutButton /> : <SignInButton />}
       />
       <main className="flex flex-col gap-6 px-11 pt-7 pb-[60px]">
+        {params.sheet && (
+          <div className="border border-accent bg-accent/[0.07] px-[18px] py-3.5 text-[12.5px] text-ink">
+            Exported to Google Sheets —{" "}
+            <a href={params.sheet} target="_blank" rel="noreferrer" className="text-accent underline">
+              open the sheet
+            </a>
+          </div>
+        )}
+        {params.sheetError && (
+          <div className="border border-black/25 bg-black/[0.03] px-[18px] py-3.5 text-[12.5px] text-muted">
+            Couldn&apos;t export: {params.sheetError}
+          </div>
+        )}
         <form
           action={runAreaReport}
           className="flex flex-wrap items-end gap-[18px] border border-black/[0.12] bg-panel px-[26px] py-6"
@@ -70,6 +83,18 @@ export default async function MarketDeskPage({
             <div className="font-serif text-[38px] leading-none">{area || "No area selected"}</div>
           </div>
           <div className="flex gap-2.5">
+            {userId && entry && (
+              <form action={exportMarketData}>
+                <input type="hidden" name="area" value={area} />
+                <input type="hidden" name="tab" value={tab} />
+                <button
+                  type="submit"
+                  className="cursor-pointer border border-ink bg-transparent px-4 py-2.5 text-center font-sans text-[9.5px] tracking-[0.14em] text-ink uppercase hover:bg-ink hover:text-page"
+                >
+                  Export to Sheets
+                </button>
+              </form>
+            )}
             <OutlineButton>Download PDF</OutlineButton>
             <GoldButton>Send to Marketing Production</GoldButton>
           </div>
